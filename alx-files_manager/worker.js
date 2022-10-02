@@ -1,25 +1,73 @@
 import Queue from 'bull';
-import imageThumbnail from 'image-thumbnail';
+import { ObjectId } from 'mongodb';
+import { promises as fsPromises } from 'fs';
+import fileUtils from './utils/file';
+import userUtils from './utils/user';
+import basicUtils from './utils/basic';
 
-import writeFile from './utils/write';
+const imageThumbnail = require('image-thumbnail');
 
-const fileQueue = new Queue('image transcoding');
-fileQueue.process(async ({ data }, done) => {
-  const { _id, userId } = data;
-  let { path } = data;
+const fileQueue = new Queue('fileQueue');
+const userQueue = new Queue('userQueue');
 
-  path = path.slice(19);
+fileQueue.process(async (job) => {
+  const { fileId, userId } = job.data;
 
-  if (!userId) done(Error('Missing userId'));
-  if (!_id) done(Error('Missing fileId'));
+  // Delete bull keys in redis
+  //   redis-cli keys "bull*" | xargs redis-cli del
 
-  const thumbNail100 = await imageThumbnail(data.data, { width: 100 });
-  const thumbNail250 = await imageThumbnail(data.data, { width: 250 });
-  const thumbNail500 = await imageThumbnail(data.data, { width: 500 });
+  if (!userId) {
+    console.log('Missing userId');
+    throw new Error('Missing userId');
+  }
 
-  await writeFile(`${path}_100`, 'image', thumbNail100);
-  await writeFile(`${path}_250`, 'image', thumbNail250);
-  await writeFile(`${path}_500`, 'image', thumbNail500);
+  if (!fileId) {
+    console.log('Missing fileId');
+    throw new Error('Missing fileId');
+  }
+
+  if (!basicUtils.isValidId(fileId) || !basicUtils.isValidId(userId)) throw new Error('File not found');
+
+  const file = await fileUtils.getFile({
+    _id: ObjectId(fileId),
+    userId: ObjectId(userId),
+  });
+
+  if (!file) throw new Error('File not found');
+
+  const { localPath } = file;
+  const options = {};
+  const widths = [500, 250, 100];
+
+  widths.forEach(async (width) => {
+    options.width = width;
+    try {
+      const thumbnail = await imageThumbnail(localPath, options);
+      await fsPromises.writeFile(`${localPath}_${width}`, thumbnail);
+      //   console.log(thumbnail);
+    } catch (err) {
+      console.error(err.message);
+    }
+  });
 });
 
-export default fileQueue;
+userQueue.process(async (job) => {
+  const { userId } = job.data;
+  // Delete bull keys in redis
+  //   redis-cli keys "bull*" | xargs redis-cli del
+
+  if (!userId) {
+    console.log('Missing userId');
+    throw new Error('Missing userId');
+  }
+
+  if (!basicUtils.isValidId(userId)) throw new Error('User not found');
+
+  const user = await userUtils.getUser({
+    _id: ObjectId(userId),
+  });
+
+  if (!user) throw new Error('User not found');
+
+  console.log(`Welcome ${user.email}!`);
+});
