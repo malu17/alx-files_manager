@@ -11,6 +11,8 @@ The objective is to build a simple platform to upload and view files with:
 - Viewing a file
 - Generating thumbnails for images
 
+[GitHub](https://github.com/malu17).
+
 ## Core technologies
 
 |                                                                                                         |                                                                                      |                                                                                              |
@@ -26,6 +28,11 @@ Mocha is used in combination with Chai for testing the app.
 
 ![Mocha & Chai](https://miro.medium.com/max/499/0*WpXBkrfgR2g9dw2T.png)
 
-## Authors
-Emediong Francis: emediongfrancis@gmail.com <br>
-Divine Chisom Ukonu: divinechisom1995@gmail.com
+## Software engineer
+ # :enter_belu: 
+* **elias fiseha** - [malu17](https://github.com/malu17)
+
+## :mega: Acknowledgments
+
+* alx School (providing guidance)
+[Elias fiseha]|[Twitter](https://twitter.com/eliasfiseha1) | [GitHub](https://github.com/malu17).
